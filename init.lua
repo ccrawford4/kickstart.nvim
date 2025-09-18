@@ -158,6 +158,61 @@ require('lazy').setup({
     end,
   },
 
+  -- Lazygit integration
+  {
+    'kdheepak/lazygit.nvim',
+    lazy = true,
+    cmd = {
+      'LazyGit',
+      'LazyGitConfig',
+      'LazyGitCurrentFile',
+      'LazyGitFilter',
+      'LazyGitFilterCurrentFile',
+    },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+    keys = {
+      { '<leader>gg', '<cmd>LazyGit<cr>', desc = 'Open Lazy[G]it' },
+    },
+  },
+
+  -- GitHub Copilot
+  {
+    'github/copilot.vim',
+    lazy = false,
+    config = function()
+      -- Disable default tab mapping
+      vim.g.copilot_no_tab_map = true
+      vim.g.copilot_assume_mapped = true
+
+      -- Set up custom keymaps
+      vim.keymap.set('i', '<Tab>', function()
+        if vim.fn['copilot#GetDisplayedSuggestion']().text ~= '' then
+          return vim.fn['copilot#Accept'] ''
+        else
+          -- Let normal Tab behavior work
+          return '<Tab>'
+        end
+      end, {
+        expr = true,
+        replace_keycodes = false,
+        desc = 'Accept Copilot suggestion or normal Tab',
+      })
+      vim.keymap.set('i', '<leader><CR>', '<Plug>(copilot-dismiss)', { desc = 'Dismiss Copilot suggestion' })
+      vim.keymap.set('i', '<leader>p<CR>', '<Plug>(copilot-previous)', { desc = 'Previous Copilot suggestion' })
+    end,
+  },
+
+  -- Auto-pairing brackets, quotes, etc.
+  {
+    'windwp/nvim-autopairs',
+    event = 'InsertEnter',
+    config = function()
+      require('nvim-autopairs').setup {}
+    end,
+  },
+
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
   --    {
@@ -519,7 +574,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
@@ -769,7 +824,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'go', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -839,3 +894,17 @@ require('lazy').setup({
 
 -- Require plugins on load
 require('kanagawa').load 'dragon'
+
+-- Custom highlight overrides for better visibility
+vim.api.nvim_create_autocmd('ColorScheme', {
+  pattern = 'kanagawa-dragon',
+  callback = function()
+    -- Make strings more visible (brighter green/teal)
+    vim.api.nvim_set_hl(0, 'String', { fg = '#87a987' }) -- Softer green
+    vim.api.nvim_set_hl(0, '@string', { fg = '#87a987' }) -- For treesitter
+  end,
+})
+
+-- Apply immediately if already loaded
+vim.api.nvim_set_hl(0, 'String', { fg = '#87a987' })
+vim.api.nvim_set_hl(0, '@string', { fg = '#87a987' })
