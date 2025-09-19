@@ -90,6 +90,12 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- Leader-based window navigation
+vim.keymap.set('n', '<leader>wh', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set('n', '<leader>wl', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+vim.keymap.set('n', '<leader>wj', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+vim.keymap.set('n', '<leader>wk', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -145,9 +151,24 @@ require('lazy').setup({
       'nvim-tree/nvim-web-devicons',
     },
     config = function()
-      require('nvim-tree').setup {}
+      require('nvim-tree').setup {
+        on_attach = function(bufnr)
+          local api = require('nvim-tree.api')
 
-      -- Set up keymap to open nvim-tree with <leader>e
+          -- Default mappings
+          api.config.mappings.default_on_attach(bufnr)
+
+          -- Custom key mappings for file operations
+          local opts = function(desc)
+            return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+          end
+
+          vim.keymap.set('n', 'y', api.fs.copy.node, opts('Copy File'))
+          vim.keymap.set('n', 'p', api.fs.paste, opts('Paste'))
+        end,
+      }
+
+      -- Set up keymap to toggle nvim-tree with <leader>e
       vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeToggle<CR>', { desc = 'Toggle file [E]xplorer' })
     end,
   },
@@ -232,6 +253,22 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
     },
+    config = function()
+      require('gitsigns').setup {
+        signs = {
+          add = { text = '+' },
+          change = { text = '~' },
+          delete = { text = '_' },
+          topdelete = { text = '‾' },
+          changedelete = { text = '~' },
+        },
+      }
+
+      -- Git diff keymaps
+      vim.keymap.set('n', '<leader>gp', '<cmd>Gitsigns preview_hunk<CR>', { desc = '[G]it [P]review hunk' })
+      vim.keymap.set('n', '<leader>gb', '<cmd>Gitsigns blame_line<CR>', { desc = '[G]it [B]lame line' })
+      vim.keymap.set('n', '<leader>gs', '<cmd>Gitsigns show_base<CR>', { desc = '[G]it [S]how base' })
+    end,
   },
 
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
