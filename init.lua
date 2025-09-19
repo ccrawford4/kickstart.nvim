@@ -153,7 +153,7 @@ require('lazy').setup({
     config = function()
       require('nvim-tree').setup {
         on_attach = function(bufnr)
-          local api = require('nvim-tree.api')
+          local api = require 'nvim-tree.api'
 
           -- Default mappings
           api.config.mappings.default_on_attach(bufnr)
@@ -163,8 +163,8 @@ require('lazy').setup({
             return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
           end
 
-          vim.keymap.set('n', 'y', api.fs.copy.node, opts('Copy File'))
-          vim.keymap.set('n', 'p', api.fs.paste, opts('Paste'))
+          vim.keymap.set('n', 'y', api.fs.copy.node, opts 'Copy File')
+          vim.keymap.set('n', 'p', api.fs.paste, opts 'Paste')
         end,
       }
 
@@ -268,6 +268,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>gp', '<cmd>Gitsigns preview_hunk<CR>', { desc = '[G]it [P]review hunk' })
       vim.keymap.set('n', '<leader>gb', '<cmd>Gitsigns blame_line<CR>', { desc = '[G]it [B]lame line' })
       vim.keymap.set('n', '<leader>gs', '<cmd>Gitsigns show_base<CR>', { desc = '[G]it [S]how base' })
+      vim.keymap.set('n', '<leader>ghr', '<cmd>Gitsigns reset_hunk<CR>', { desc = '[G]it [H]unk [R]eset' })
     end,
   },
 
@@ -391,7 +392,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
+      vim.keymap.set('n', '<leader>so', builtin.oldfiles, { desc = '[S]earch [O]ld files' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
       -- Slightly advanced example of overriding default behavior and theme
@@ -616,6 +617,24 @@ require('lazy').setup({
         -- ts_ls = {},
         --
 
+        -- YAML Language Server for syntax checking, validation, and Kubernetes schema support
+        yamlls = {
+          settings = {
+            yaml = {
+              schemas = {
+                -- Kubernetes schemas
+                ['https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.18.0-standalone-strict/all.json'] = '/*.k8s.yaml',
+                ['https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.18.0-standalone-strict/all.json'] = '/*.k8s.yml',
+                ['kubernetes'] = '/*.yaml',
+                ['kubernetes'] = '/*.yml',
+              },
+              validate = true,
+              completion = true,
+              hover = true,
+            },
+          },
+        },
+
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -648,6 +667,8 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'yamlfmt', -- Used to format YAML files
+        'yamllint', -- Used to lint YAML files
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -682,31 +703,50 @@ require('lazy').setup({
         desc = '[F]ormat buffer',
       },
     },
-    opts = {
-      notify_on_error = false,
-      format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
-        if disable_filetypes[vim.bo[bufnr].filetype] then
-          return nil
-        else
-          return {
-            timeout_ms = 500,
-            lsp_format = 'fallback',
-          }
-        end
-      end,
-      formatters_by_ft = {
-        lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
-        -- javascript = { "prettierd", "prettier", stop_after_first = true },
-      },
-    },
+    config = function()
+      -- Global variable to track format-on-save state (default: enabled)
+      vim.g.format_on_save_enabled = true
+
+      require('conform').setup {
+        notify_on_error = false,
+        format_on_save = function(bufnr)
+          -- Check if format-on-save is globally disabled
+          if not vim.g.format_on_save_enabled then
+            return nil
+          end
+
+          -- Disable "format_on_save lsp_fallback" for languages that don't
+          -- have a well standardized coding style. You can add additional
+          -- languages here or re-enable it for the disabled ones.
+          local disable_filetypes = { c = true, cpp = true }
+          if disable_filetypes[vim.bo[bufnr].filetype] then
+            return nil
+          else
+            return {
+              timeout_ms = 500,
+              lsp_format = 'fallback',
+            }
+          end
+        end,
+        formatters_by_ft = {
+          lua = { 'stylua' },
+          yaml = { 'yamlfmt' },
+          yml = { 'yamlfmt' },
+          -- Conform can also run multiple formatters sequentially
+          -- python = { "isort", "black" },
+          --
+          -- You can use 'stop_after_first' to run the first available formatter from the list
+          -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        },
+      }
+
+      -- Add keymap to toggle format-on-save
+      vim.keymap.set('n', '<leader>uf', function()
+        vim.g.format_on_save_enabled = not vim.g.format_on_save_enabled
+        local status = vim.g.format_on_save_enabled and 'enabled' or 'disabled'
+        vim.notify('Format on save ' .. status, vim.log.levels.INFO)
+      end, { desc = 'Toggle format on save' })
+    end,
   },
 
   { -- Autocompletion
