@@ -96,6 +96,52 @@ vim.keymap.set('n', '<leader>wl', '<C-w><C-l>', { desc = 'Move focus to the righ
 vim.keymap.set('n', '<leader>wj', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<leader>wk', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- Mark navigation keymaps
+vim.keymap.set('n', '<leader>mm', function()
+  local char = vim.fn.input 'Set mark: '
+  if char ~= '' then
+    vim.cmd('mark ' .. char)
+    vim.notify('Mark ' .. char .. ' set at line ' .. vim.fn.line '.')
+  end
+end, { desc = '[M]ark [M]ake - Set a mark' })
+
+vim.keymap.set('n', '<leader>mj', function()
+  local char = vim.fn.input 'Jump to mark: '
+  if char ~= '' then
+    vim.cmd('normal! `' .. char)
+  end
+end, { desc = '[M]ark [J]ump - Jump to exact mark position' })
+
+vim.keymap.set('n', '<leader>ml', function()
+  local char = vim.fn.input 'Jump to line of mark: '
+  if char ~= '' then
+    vim.cmd("normal! '" .. char)
+  end
+end, { desc = '[M]ark [L]ine - Jump to mark line' })
+
+vim.keymap.set('n', '<leader>mv', '<cmd>marks<CR>', { desc = '[M]ark [V]iew - Show all marks' })
+
+vim.keymap.set('n', '<leader>md', function()
+  local char = vim.fn.input 'Delete mark: '
+  if char ~= '' then
+    vim.cmd('delmarks ' .. char)
+    vim.notify('Mark ' .. char .. ' deleted')
+  end
+end, { desc = '[M]ark [D]elete - Delete a mark' })
+
+vim.keymap.set('n', '<leader>mD', function()
+  vim.cmd('delmarks!')
+  vim.notify('All marks deleted')
+end, { desc = '[M]ark [D]elete All - Delete all marks' })
+
+-- Quick mark keymaps for common marks
+vim.keymap.set('n', '<leader>m1', 'ma', { desc = 'Set mark a' })
+vim.keymap.set('n', '<leader>m2', 'mb', { desc = 'Set mark b' })
+vim.keymap.set('n', '<leader>m3', 'mc', { desc = 'Set mark c' })
+vim.keymap.set('n', '<leader>j1', '`a', { desc = 'Jump to mark a' })
+vim.keymap.set('n', '<leader>j2', '`b', { desc = 'Jump to mark b' })
+vim.keymap.set('n', '<leader>j3', '`c', { desc = 'Jump to mark c' })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -227,6 +273,29 @@ require('lazy').setup({
     end,
   },
 
+  -- Mark visualization in sign column
+  {
+    'chentoast/marks.nvim',
+    event = 'VimEnter',
+    config = function()
+      require('marks').setup {
+        default_mappings = false, -- We have our own mark mappings
+        builtin_marks = { '.', '<', '>', '^' },
+        cyclic = true,
+        force_write_shada = false,
+        refresh_interval = 250,
+        sign_priority = { lower = 10, upper = 15, builtin = 8, bookmark = 20 },
+        excluded_filetypes = {},
+        bookmark_0 = {
+          sign = '⚑',
+          virt_text = 'hello world',
+          annotate = false,
+        },
+        mappings = {},
+      }
+    end,
+  },
+
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
   --    {
@@ -335,6 +404,8 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>m', group = '[M]arks' },
+        { '<leader>j', group = '[J]ump to marks' },
       },
     },
   },
@@ -417,6 +488,9 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+
+      -- Search marks with telescope
+      vim.keymap.set('n', '<leader>sm', builtin.marks, { desc = '[S]earch [M]arks' })
     end,
   },
 
