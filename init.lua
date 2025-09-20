@@ -9,6 +9,9 @@ vim.g.have_nerd_font = true
 vim.o.number = true
 vim.o.relativenumber = true
 
+-- Ignore case when searching
+vim.opt.ignorecase = true
+
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
 
@@ -130,8 +133,8 @@ vim.keymap.set('n', '<leader>md', function()
 end, { desc = '[M]ark [D]elete - Delete a mark' })
 
 vim.keymap.set('n', '<leader>mD', function()
-  vim.cmd('delmarks!')
-  vim.notify('All marks deleted')
+  vim.cmd 'delmarks!'
+  vim.notify 'All marks deleted'
 end, { desc = '[M]ark [D]elete All - Delete all marks' })
 
 -- Quick mark keymaps for common marks
@@ -294,6 +297,65 @@ require('lazy').setup({
         mappings = {},
       }
     end,
+  },
+
+  -- Flash.nvim for enhanced navigation
+  {
+    'folke/flash.nvim',
+    event = 'VeryLazy',
+    opts = {
+      continue = true,
+      char = {
+        char_actions = function(motion)
+          return {
+            [';'] = 'next', -- semicolon to iterate down through options
+            [','] = 'prev', -- comma to iterate up through options
+          }
+        end,
+      },
+    },
+    keys = {
+      {
+        'zk',
+        mode = { 'n', 'x', 'o' },
+        function()
+          require('flash').jump()
+        end,
+        desc = 'Flash',
+      },
+      {
+        'S',
+        mode = { 'n', 'x', 'o' },
+        function()
+          require('flash').treesitter()
+        end,
+        desc = 'Flash Treesitter',
+      },
+      {
+        'r',
+        mode = 'o',
+        function()
+          require('flash').remote()
+        end,
+        desc = 'Remote Flash',
+      },
+      {
+        'R',
+        mode = { 'o', 'x' },
+        function()
+          require('flash').treesitter_search()
+        end,
+        desc = 'Treesitter Search',
+      },
+      {
+        '<c-s>',
+        mode = { 'c' },
+        function()
+          require('flash').toggle()
+        end,
+        desc = 'Toggle Flash Search',
+      },
+    },
   },
 
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
@@ -1050,6 +1112,21 @@ require('lazy').setup({
 
 -- Require plugins on load
 require('kanagawa').load 'dragon'
+
+-- Enhanced search functionality
+vim.keymap.set('n', 'f', function()
+  local search_term = vim.fn.input 'Search forward: '
+  if search_term ~= '' then
+    vim.fn.search(search_term, 'W')
+  end
+end, { desc = 'Search forward' })
+
+vim.keymap.set('n', 'F', function()
+  local search_term = vim.fn.input 'Search backward: '
+  if search_term ~= '' then
+    vim.fn.search(search_term, 'bW')
+  end
+end, { desc = 'Search backward' })
 
 -- Custom highlight overrides for better visibility
 vim.api.nvim_create_autocmd('ColorScheme', {
