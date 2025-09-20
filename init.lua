@@ -489,6 +489,16 @@ require('lazy').setup({
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
 
+      -- Search files including hidden files
+      vim.keymap.set('n', '<leader>sf.', function()
+        builtin.find_files { hidden = true }
+      end, { desc = '[S]earch [F]iles including hidden' })
+
+      -- Live grep including hidden files
+      vim.keymap.set('n', '<leader>sg.', function()
+        builtin.live_grep { additional_args = { '--hidden' } }
+      end, { desc = '[S]earch by [G]rep including hidden' })
+
       -- Search marks with telescope
       vim.keymap.set('n', '<leader>sm', builtin.marks, { desc = '[S]earch [M]arks' })
     end,
