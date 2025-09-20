@@ -157,6 +157,26 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+-- Auto-organize imports for Go files on save
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = '*.go',
+  group = vim.api.nvim_create_augroup('go-imports', { clear = true }),
+  callback = function()
+    -- Organize imports
+    local params = vim.lsp.util.make_range_params()
+    params.context = { only = { 'source.organizeImports' } }
+    local result = vim.lsp.buf_request_sync(0, 'textDocument/codeAction', params, 1000)
+    for cid, res in pairs(result or {}) do
+      for _, r in pairs(res.result or {}) do
+        if r.edit then
+          local enc = (vim.lsp.get_client_by_id(cid) or {}).offset_encoding or 'utf-16'
+          vim.lsp.util.apply_workspace_edit(r.edit, enc)
+        end
+      end
+    end
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -187,6 +207,14 @@ require('lazy').setup({
     'rebelot/kanagawa.nvim',
     name = 'kanagawa',
     priority = 999,
+  },
+
+  {
+    'neovim/nvim-lspconfig',
+    config = function()
+      require 'plugins.configs.lspconfig'
+      require 'custom.configs.lspconfig'
+    end,
   },
 
   -- File tree explorer
@@ -738,29 +766,59 @@ require('lazy').setup({
       --  When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
       --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
       local capabilities = require('blink.cmp').get_lsp_capabilities()
+      capabilities.textDocument.completion.completionItem.snippetSupport = true
 
-      -- Enable the following language servers
-      --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
-      --
-      --  Add any additional override configuration in the following tables. Available keys are:
-      --  - cmd (table): Override the default command used to start the server
-      --  - filetypes (table): Override the default list of associated filetypes for the server
-      --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
-      --  - settings (table): Override the default settings passed when initializing the server.
-      --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
-        -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-        --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
+        gopls = {
+          settings = {
+            gopls = {
+              analyses = {
+                unusedparams = true,
+              },
+              staticcheck = true,
+              completeUnimported = true,
+              usePlaceholders = true,
+              gofumpt = true,
+              codelenses = {
+                gc_details = false,
+                generate = true,
+                regenerate_cgo = true,
+                run_govulncheck = true,
+                test = true,
+                tidy = true,
+                upgrade_dependency = true,
+                vendor = true,
+              },
+              hints = {
+                assignVariableTypes = true,
+                compositeLiteralFields = true,
+                constantValues = true,
+                functionTypeParameters = true,
+                parameterNames = true,
+                rangeVariableTypes = true,
+              },
+            },
+          },
+        },
+
+        -- TypeScript/JavaScript Language Server
+        ts_ls = {
+          settings = {
+            typescript = {
+              preferences = {
+                completeUnimported = true,
+                usePlaceholders = true,
+              },
+            },
+            javascript = {
+              preferences = {
+                completeUnimported = true,
+                usePlaceholders = true,
+              },
+            },
+          },
+        },
 
         -- YAML Language Server for syntax checking, validation, and Kubernetes schema support
         yamlls = {
@@ -814,6 +872,7 @@ require('lazy').setup({
         'stylua', -- Used to format Lua code
         'yamlfmt', -- Used to format YAML files
         'yamllint', -- Used to lint YAML files
+        'typescript-language-server', -- TypeScript/JavaScript LSP
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -952,7 +1011,7 @@ require('lazy').setup({
         -- <c-k>: Toggle signature help
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
-        preset = 'default',
+        preset = 'enter',
 
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -968,6 +1027,8 @@ require('lazy').setup({
         -- By default, you may press `<c-space>` to show the documentation.
         -- Optionally, set `auto_show = true` to show the documentation after a delay.
         documentation = { auto_show = false, auto_show_delay_ms = 500 },
+        -- Accept LSP snippets/placeholders
+        accept = { auto_brackets = { enabled = true } },
       },
 
       sources = {
