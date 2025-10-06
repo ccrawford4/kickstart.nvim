@@ -802,6 +802,15 @@ require('lazy').setup({
           },
         },
 
+        -- Ruby Language Server with RuboCop support
+        ruby_lsp = {
+          settings = {
+            rubyLsp = {
+              formatter = 'rubocop',
+            },
+          },
+        },
+
         -- TypeScript/JavaScript Language Server
         ts_ls = {
           settings = {
@@ -873,6 +882,7 @@ require('lazy').setup({
         'yamlfmt', -- Used to format YAML files
         'yamllint', -- Used to lint YAML files
         'typescript-language-server', -- TypeScript/JavaScript LSP
+        'rubocop', -- Used to format and lint Ruby code
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -936,6 +946,7 @@ require('lazy').setup({
           lua = { 'stylua' },
           yaml = { 'yamlfmt' },
           yml = { 'yamlfmt' },
+          ruby = { 'rubocop' },
           -- Conform can also run multiple formatters sequentially
           -- python = { "isort", "black" },
           --
