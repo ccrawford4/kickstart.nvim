@@ -247,7 +247,7 @@ require('lazy').setup({
       }
 
       -- Set up keymap to toggle nvim-tree with <leader>e
-      vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeToggle<CR>', { desc = 'Toggle file [E]xplorer' })
+      vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeFindFileToggle<CR>', { desc = 'Toggle file [E]xplorer' })
     end,
   },
 
