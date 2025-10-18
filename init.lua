@@ -598,6 +598,38 @@ require('lazy').setup({
 
       -- Search marks with telescope
       vim.keymap.set('n', '<leader>sm', builtin.marks, { desc = '[S]earch [M]arks' })
+
+      -- Search and replace across codebase
+      vim.keymap.set('n', '<leader>sr', function()
+        local search = vim.fn.input 'Search: '
+        if search == '' then
+          return
+        end
+
+        local replace = vim.fn.input 'Replace with: '
+
+        -- Use vim's grep to populate quickfix list
+        vim.cmd('silent grep! ' .. vim.fn.shellescape(search))
+
+        local qf_list = vim.fn.getqflist()
+        if #qf_list == 0 then
+          vim.notify('No matches found for: ' .. search, vim.log.levels.WARN)
+          return
+        end
+
+        vim.cmd 'copen'
+
+        local confirm = vim.fn.input(string.format('Replace "%s" with "%s" in %d matches? (y/n): ', search, replace, #qf_list))
+        if confirm:lower() == 'y' then
+          local search_escaped = vim.fn.escape(search, '/\\.*$^~[]')
+          local replace_escaped = vim.fn.escape(replace, '/\\&~')
+          vim.cmd(string.format('silent! cfdo %%s/%s/%s/ge | update', search_escaped, replace_escaped))
+          vim.cmd 'cclose'
+          vim.notify(string.format('Replaced all occurrences of "%s" with "%s"', search, replace), vim.log.levels.INFO)
+        else
+          vim.cmd 'cclose'
+        end
+      end, { desc = '[S]earch and [R]eplace across codebase' })
     end,
   },
 
