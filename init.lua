@@ -586,6 +586,11 @@ require('lazy').setup({
         builtin.find_files { hidden = true }
       end, { desc = '[S]earch [F]iles including hidden' })
 
+      -- Search files including gitignored files
+      vim.keymap.set('n', '<leader>sfg', function()
+        builtin.find_files { no_ignore = true, hidden = true }
+      end, { desc = '[S]earch [F]iles including [G]itignored' })
+
       -- Live grep including hidden files
       vim.keymap.set('n', '<leader>sg.', function()
         builtin.live_grep { additional_args = { '--hidden' } }
