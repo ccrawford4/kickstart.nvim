@@ -633,6 +633,39 @@ require('lazy').setup({
     end,
   },
 
+  -- Search and replace with visual confirmation
+  {
+    'nvim-pack/nvim-spectre',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+    keys = {
+      {
+        '<leader>src',
+        function()
+          require('spectre').open()
+        end,
+        desc = '[S]earch and [R]eplace with [C]onfirmation',
+      },
+      -- Optional: search and replace for the current word
+      {
+        '<leader>srw',
+        function()
+          require('spectre').open_visual({ select_word = true })
+        end,
+        desc = '[S]earch and [R]eplace current [W]ord',
+      },
+      -- Optional: search and replace in current file only
+      {
+        '<leader>srf',
+        function()
+          require('spectre').open_file_search()
+        end,
+        desc = '[S]earch and [R]eplace in current [F]ile',
+      },
+    },
+  },
+
   -- LSP Plugins
   {
     -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
